@@ -1,8 +1,7 @@
-from flask import Flask, render_template, redirect
+from flask import Flask, render_template, redirect, url_for
 from flask_bootstrap import Bootstrap
 from models.movie import db, Movie
 from forms.forms import EditForm
-
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = '123456789'
@@ -11,11 +10,13 @@ Bootstrap(app)
 db.init_app(app)
 
 with app.app_context():
+    # creating the db tables
     db.create_all()
 
 
 @app.route('/')
-def hello_world():  # put application's code here
+def home():
+    """This route handler renders the home page"""
     all_entry = db.session.query(Movie).all()
 
     return render_template('index.html', all_entry=all_entry)
@@ -36,9 +37,17 @@ def test():
 
 
 @app.route('/edit/<id>', methods=["POST", "GET"])
-def edit_rating(id):
+def edit(id):
+    """This route handler edits the rating and review"""
     edit_form = EditForm()
-    print(id)
+    selected_movie = Movie.query.get(id)
+
+    if edit_form.validate_on_submit():
+        selected_movie.rating = edit_form.rating.data
+        selected_movie.review = edit_form.review.data
+        db.session.commit()
+        return redirect(url_for('home'))
+
     return render_template('edit.html', form=edit_form)
 
 
